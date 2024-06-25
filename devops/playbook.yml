@@ -78,4 +78,4 @@
     - name: reload nginx
       service: 
         name: nginx
-        state: reload
+        state: reloaded
