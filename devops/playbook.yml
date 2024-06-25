@@ -1,0 +1,81 @@
+---
+- name: Deploy Next.js Docker container
+  hosts: all
+  become: yes
+  vars:
+    IMAGE_NAME: "{{ image_name }}"
+    DOCKERHUB_USERNAME: "{{ dockerhub_username }}"
+    DOCKERHUB_TOKEN: "{{ dockerhub_token }}"
+    DOMAIN_NAME: "{{ domain_name }}"
+
+  tasks:
+    - name: run apt update
+      apt:
+        update_cache: yes
+  
+    - name: install docker
+      apt: 
+        name: docker.io
+        state: present
+  
+    - name: start docker service
+      service:
+        name: docker
+        state: started
+  
+    - name: install nginx
+      apt:
+        name: nginx
+        state: present
+  
+    - name: login to docker hub with token 
+      docker_login:
+        username: "{{ DOCKERHUB_USERNAME }}"
+        password: "{{ DDOCKERHUB_TOKEN }}"
+  
+    - name: pull docker image
+      docker_image:
+        name: "{{ IMAGE_NAME }}"
+        source: pull
+  
+    - name: run docker container
+      docker_container:
+        name: nextjs_container
+        image: "{{ IMAGE_NAME }}"
+        state: started
+        restart_policy: always
+        ports: 
+          - "3001:3000"
+  
+    - name: wait for container to be started
+      wait_for:
+        host: localhost
+        port: 3001
+        delay: 5
+        timeout: 60
+
+    - name: check if nginx config file exists
+      stat:
+        path: "/etc/nginx/sites-available/{{ DOMAIN_NAME }}"
+      register: nginx_config
+
+    - name: configure nginx
+      template:
+        src: nginx.conf.j2
+        dest: "/etc/nginx/sites-available/{{ DOMAIN_NAME }}"
+      when: not nginx.config.stat.exists
+
+    - name: enable nginx site
+      file:
+        src: "/etc/nginx/sites-available/{{ DOMAIN_NAME }}"
+        dest: "/etc/nginx/sites-enabled/{{ DOMAIN_NAME }}"
+        state: link
+      when: not nginx.config.stat.exists
+      notify: reload nginx
+
+
+  handlers:
+    - name: reload nginx
+      service: 
+        name: nginx
+        state: reload
