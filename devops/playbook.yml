@@ -63,14 +63,14 @@
       template:
         src: nginx.conf.j2
         dest: "/etc/nginx/sites-available/{{ DOMAIN_NAME }}"
-      when: not nginx.config.stat.exists
+      when: not nginx_config.stat.exists
 
     - name: enable nginx site
       file:
         src: "/etc/nginx/sites-available/{{ DOMAIN_NAME }}"
         dest: "/etc/nginx/sites-enabled/{{ DOMAIN_NAME }}"
         state: link
-      when: not nginx.config.stat.exists
+      when: not nginx_config.stat.exists
       notify: reload nginx
 
 
