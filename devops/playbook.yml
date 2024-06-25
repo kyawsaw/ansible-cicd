@@ -31,7 +31,7 @@
     - name: login to docker hub with token 
       docker_login:
         username: "{{ DOCKERHUB_USERNAME }}"
-        password: "{{ DDOCKERHUB_TOKEN }}"
+        password: "{{ DOCKERHUB_TOKEN }}"
   
     - name: pull docker image
       docker_image:
